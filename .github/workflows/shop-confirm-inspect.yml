@@ -1,0 +1,39 @@
+name: Inspect current shop for purchase confirmation
+on:
+  push:
+    branches: [fix/shop-confirmation-20260910]
+    paths: [.github/workflows/shop-confirm-inspect.yml]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Check original source identity and inspect purchase functions
+        run: |
+          test "$(git hash-object index.html)" = f7d10560d496d23350a14cd99edc7009d2850ba7
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          text = Path('index.html').read_text(encoding='utf-8-sig')
+          lines = text.splitlines()
+          matches = [i for i,line in enumerate(lines) if re.search(r'buyAura|purchaseAura|buyTrans|buyProtect|buyCostume|shopBuy|purchaseItem|function.*(?:buy|purchase)|(?:buy|purchase).*function', line, re.I)]
+          shown=set()
+          for i in matches:
+              for j in range(max(0,i-3),min(len(lines),i+30)):
+                  if j in shown: continue
+                  shown.add(j)
+                  line = re.sub(r'data:[^\s\"\x27]+', '[embedded asset]', lines[j])
+                  print(f'{j+1}: {line[:1400]}')
+          print('TOTAL_LINES',len(lines))
+          PY
+      - name: Export exact current HTML for isolated local testing
+        uses: actions/upload-artifact@v4
+        with:
+          name: current-game-source
+          path: index.html
+          retention-days: 1
