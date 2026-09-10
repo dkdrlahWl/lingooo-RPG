@@ -1,0 +1,53 @@
+name: Validate and apply shop-only patch
+on:
+  push:
+    branches: [fix/shop-confirmation-20260910]
+    paths: [.github/workflows/shop-confirm-apply.yml]
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply reviewed patch only to the exact tested original
+        run: |
+          test "$(git hash-object index.html)" = f7d10560d496d23350a14cd99edc7009d2850ba7
+          git apply --check maintenance/shop-confirm.patch
+          git apply maintenance/shop-confirm.patch
+          test "$(git hash-object index.html)" = bf02aed89d91b771c2d50fcf5d61e837f26e13d7
+      - name: Validate all executable JavaScript without contacting game servers
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          from html.parser import HTMLParser
+          import subprocess,tempfile
+          class Scripts(HTMLParser):
+              def __init__(self):
+                  super().__init__();self.active=False;self.parts=[];self.scripts=[]
+              def handle_starttag(self,tag,attrs):
+                  if tag=='script':
+                      attrs=dict(attrs)
+                      self.active=not attrs.get('src') and attrs.get('type','').lower() in ('','text/javascript','application/javascript','module')
+                      self.parts=[]
+              def handle_data(self,data):
+                  if self.active:self.parts.append(data)
+              def handle_endtag(self,tag):
+                  if tag=='script' and self.active:
+                      self.scripts.append(''.join(self.parts));self.active=False
+          text=Path('index.html').read_text(encoding='utf-8-sig')
+          assert '__shopTest' not in text
+          parser=Scripts();parser.feed(text)
+          assert len(parser.scripts)==22
+          with tempfile.TemporaryDirectory() as tmp:
+              for i,code in enumerate(parser.scripts):
+                  path=Path(tmp)/f'script-{i}.js';path.write_text(code)
+                  subprocess.run(['node','--check',str(path)],check=True)
+          print('PASS: 22 executable scripts; exact locally tested HTML')
+          PY
+      - name: Commit validated HTML to isolated fix branch
+        run: |
+          git add -- index.html
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'fix: require confirmation before shop purchases'
+          git push origin HEAD:refs/heads/fix/shop-confirmation-20260910
