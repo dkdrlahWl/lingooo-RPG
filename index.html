@@ -596,7 +596,7 @@ left:var(--fallen-axe-left)!important;
   <div class="panel battle-panel"><div class="arena" id="arena"><div class="battle-head"><h2 id="bossName"></h2><p id="battleState">자동 전투 중 · 1초마다 공격</p><button class="battle-toggle on" id="battleToggle" onclick="toggleAutoBattle()">자동사냥 ON</button></div><div class="boss-art" id="bossArt"><div class="boss-core"><span class="boss-eye left"></span><span class="boss-eye right"></span><span class="boss-mouth"></span></div><div class="boss-extra"></div></div><div class="hp-wrap"><div class="hp-row"><b>보스 HP</b><span id="hpText"></span></div><div class="hp-bar"><div class="hp-fill" id="hpFill"></div></div><div class="timer"><i id="timerFill"></i></div></div><div class="battle-log" id="battleLog"></div></div></div>
   <div class="panel equip-panel"><div class="panel-title">장착 장비 <span class="equip-title-actions"><button class="pose-open-btn" onclick="openGearPoseEditor()">외형 편집</button><small id="equipAtk">공격력 +0</small></span></div><div class="equip-grid" id="equipGrid"></div></div>
   <div class="panel stats-panel"><div class="panel-title">플레이어 능력치 <small>장착 장비 적용</small></div><div class="player-stats" id="playerStats"></div><div class="stat-formula">최종 공격력 = (기본 공격력 + 장비 공격력) × (1 + 공격력%)</div></div>
-<nav class="quick main-quick"><button class="daily-button daily-reward-quick" onclick="openDailyReward()">일일 보상</button><button onclick="return openDungeon('gold')">특수 던전</button><button onclick="openTower()">시련의 탑</button><button id="auraShopQuick" data-open-aura-shop="1" onclick="openAuraShop()" onpointerup="openAuraShop()">상점</button><button onclick="openItemInventory()">가방</button><button onclick="openCollection()">장비 도감</button><button class="tip-button" onclick="openTips()">팁</button></nav>
+<nav class="quick main-quick"><button class="daily-button daily-reward-quick" onclick="openDailyReward()">일일 보상</button><button onclick="return openDungeon('gold')">특수 던전</button><button onclick="openTower()">시련의 탑</button><button id="auraShopQuick" data-open-aura-shop="1" type="button">상점</button><button onclick="openItemInventory()">가방</button><button onclick="openCollection()">장비 도감</button><button class="tip-button" onclick="openTips()">팁</button></nav>
   <div class="panel summon-panel" id="summonPanel"><div class="panel-title">장비 소환 <button class="rate-btn" onclick="openRates()">레벨별 확률</button></div><div class="summon-level"><div class="level-line"><b id="summonLevel"></b><span id="summonExp"></span></div><div class="expbar"><i id="expFill"></i></div></div><div class="summon-tabs"><button class="summon-tab active" data-group="weapon">무기</button><button class="summon-tab" data-group="armor">방어구</button><button class="summon-tab" data-group="accessory">장신구</button></div><div class="draw-buttons"><button class="draw" onclick="drawItems(1)">1회 소환<span id="drawCost1"></span></button><button class="draw" onclick="drawItems(5)">5회 소환<span id="drawCost5"></span></button><button class="draw" onclick="drawItems(10)">10회 소환<span id="drawCost10"></span></button></div></div>
   <div class="panel inventory" id="inventoryPanel"><div class="panel-title">인벤토리 <small id="invCount">0개</small></div><div class="inventory-tools"><button class="sell-bulk best" onclick="equipBest()">최적 장착</button><select id="sortSelect"><option value="attack">공격력순</option><option value="rarity">등급순</option></select><button class="sell-bulk" onclick="bulkSell(0)">일반 판매</button><button class="sell-bulk" onclick="bulkSell(1)">희귀 이하</button><button class="sell-bulk" onclick="bulkSell(2)">레어 이하</button><button class="sell-bulk" onclick="bulkSell(3)">에픽 이하</button><button class="sell-bulk" onclick="bulkSell(4)">전설 이하</button></div><div class="inventory-list" id="inventoryList"></div></div>
  </section>
@@ -896,8 +896,67 @@ function openCollectionRewards(){renderCollectionRewards(collectionOwnedCount())
 function closeCollectionRewards(){$('collectionRewardModal').classList.remove('show')}
 function renderCollectionRewards(owned){$('collectionRewards').innerHTML=collectionRewards.map(r=>{const claimed=!!state.collectionClaims[r.count],locked=owned<r.count;return '<div class="collection-reward"><span><b>첫 '+r.count+'개 보상</b><small>'+fmt(r.gold)+' 골드 · 정수 '+r.essence+'개</small></span><button '+(claimed||locked?'disabled':'')+' data-collection-reward="'+r.count+'" onclick="claimCollectionReward('+r.count+')" onpointerup="claimCollectionReward('+r.count+')">'+(claimed?'수령완료':locked?'미달성':'받기')+'</button></div>'}).join('')}
  function claimCollectionReward(count){count=Number(count);const now=Date.now();if(collectionRewardClaimBusy[count])return false;if(lastCollectionClaimTap&&now-lastCollectionClaimTap<450)return false;lastCollectionClaimTap=now;collectionRewardClaimBusy[count]=true;try{state.collectionClaims=state.collectionClaims&&typeof state.collectionClaims==='object'?state.collectionClaims:{};const r=collectionRewards.find(x=>x.count===count),owned=collectionOwnedCount();if(!r)return false;if(state.collectionClaims[count]){toast('이미 받은 도감 보상입니다.');return false}if(owned<count){toast('도감 '+count+'개 달성 후 받을 수 있습니다.');return false}state.collectionClaims[count]=true;state.gold+=r.gold;state.essence+=r.essence;renderAll();renderCollection();renderCollectionRewards(owned);queueSave();toast('도감 '+count+'개 보상 · '+fmt(r.gold)+' 골드, 정수 '+r.essence+'개');return true}finally{setTimeout(()=>{collectionRewardClaimBusy[count]=false},700)}}
-function openAuraShop(){const modal=$('auraShopModal');if(!modal)return toast('상점을 불러오지 못했습니다.');modal.classList.add('show');renderAuraShop()}
-function closeAuraShop(){cancelShopPurchase();$('auraShopModal').classList.remove('show')}
+/* RINGU SHOP INPUT V2: one click opens the shop; actions need a new gesture. */
+let shopInputEpoch=0,shopInputPointer=null,shopInputKey=null;
+function resetShopInput(){shopInputEpoch++;shopInputPointer=null;shopInputKey=null}
+(function bindShopInput(){
+  const modal=$('auraShopModal');
+  if(!modal)return;
+  const pointerEvents=typeof window.PointerEvent==='function';
+  const buttonAt=target=>target&&target.closest?target.closest('#auraShopModal button'):null;
+  const isOpen=()=>modal.classList.contains('show');
+  const stop=event=>{event.preventDefault();event.stopImmediatePropagation()};
+  const pointerId=event=>pointerEvents?event.pointerId:0;
+  function down(event){
+    shopInputPointer=null;shopInputKey=null;
+    const button=buttonAt(event.target);
+    if(!isOpen()||!button||button.disabled||event.button!==0||event.isPrimary===false)return;
+    shopInputPointer={button,epoch:shopInputEpoch,id:pointerId(event),x:event.clientX,y:event.clientY,released:false,cancelled:false};
+  }
+  function move(event){
+    const input=shopInputPointer;
+    if(!input||input.id!==pointerId(event)||input.released)return;
+    if(Math.hypot(event.clientX-input.x,event.clientY-input.y)>12)input.cancelled=true;
+  }
+  function up(event){
+    const input=shopInputPointer;
+    if(!input||input.id!==pointerId(event))return;
+    move(event);
+    const rect=input.button.getBoundingClientRect();
+    input.cancelled=input.cancelled||buttonAt(event.target)!==input.button||event.clientX<rect.left||event.clientX>rect.right||event.clientY<rect.top||event.clientY>rect.bottom;
+    input.released=true;input.releasedAt=performance.now();
+  }
+  window.addEventListener(pointerEvents?'pointerdown':'mousedown',down,true);
+  window.addEventListener(pointerEvents?'pointermove':'mousemove',move,true);
+  window.addEventListener(pointerEvents?'pointerup':'mouseup',up,true);
+  if(pointerEvents)window.addEventListener('pointercancel',()=>{shopInputPointer=null},true);
+  window.addEventListener('blur',()=>{shopInputPointer=null;shopInputKey=null});
+  modal.addEventListener('scroll',()=>{shopInputPointer=null},true);
+  window.addEventListener('keydown',event=>{
+    const button=buttonAt(event.target);
+    if(!isOpen()||!button||!['Enter',' '].includes(event.key))return;
+    if(event.repeat){stop(event);return}
+    shopInputPointer=null;
+    shopInputKey={button,epoch:shopInputEpoch};
+  },true);
+  window.addEventListener('click',event=>{
+    const button=buttonAt(event.target);
+    if(!button)return;
+    const input=shopInputPointer,key=shopInputKey;
+    // Consume before an action can replace the button or open another modal.
+    shopInputPointer=null;shopInputKey=null;
+    const nonPointer=event.detail===0&&!event.pointerType;
+    const keyboard=nonPointer&&key&&key.button===button&&key.epoch===shopInputEpoch;
+    // Screen-reader activation does not necessarily dispatch pointer events.
+    const accessible=nonPointer&&event.isTrusted;
+    const pointer=input&&input.button===button&&input.epoch===shopInputEpoch&&input.released&&!input.cancelled&&performance.now()-input.releasedAt<1000&&(!event.pointerType||event.pointerId===input.id);
+    if(!isOpen()||button.disabled||!(keyboard||accessible||pointer))stop(event);
+  },true);
+})();
+/* END RINGU SHOP INPUT V2 */
+
+function openAuraShop(){const modal=$('auraShopModal');if(!modal)return toast('상점을 불러오지 못했습니다.');if(modal.classList.contains('show'))return;resetShopInput();renderAuraShop();modal.classList.add('show')}
+function closeAuraShop(){cancelShopPurchase();resetShopInput();$('auraShopModal').classList.remove('show')}
 function switchShop(category){shopCategory=category==='item'?'item':'aura';renderAuraShop()}
 /* RINGU SHOP PURCHASE CONFIRM V1 — shared confirmation for the existing shop. */
 let shopPurchasePending=null,shopPurchaseBusy=false,shopPurchaseRefreshTimer=null,shopPurchaseReturnFocus=null;
@@ -1088,7 +1147,8 @@ function scrollToId(id){$(id).scrollIntoView({behavior:'smooth',block:'start'})}
 document.querySelectorAll('.summon-tab').forEach(btn=>btn.onclick=()=>{document.querySelectorAll('.summon-tab').forEach(x=>x.classList.remove('active'));btn.classList.add('active');drawGroup=btn.dataset.group;renderTop();renderSummon()});
 $('sortSelect').onchange=renderInventory;$('enhanceBtn').onclick=tryEnhance;$('enhanceModal').onclick=e=>{if(e.target===$('enhanceModal'))closeEnhance()};
 document.addEventListener('pointerup',e=>{const mail=e.target.closest('.mail-button');if(mail){e.preventDefault();e.stopImmediatePropagation();openMailbox()}},true);
-document.addEventListener('click',e=>{const aura=e.target.closest('[data-open-aura-shop]');if(aura){e.preventDefault();return openAuraShop()}});document.addEventListener('pointerup',e=>{const reward=e.target.closest('[data-collection-reward]');if(reward&&!reward.disabled){e.preventDefault();return claimCollectionReward(reward.dataset.collectionReward)}const aura=e.target.closest('[data-open-aura-shop]');if(aura){e.preventDefault();return openAuraShop()}const rank=e.target.closest('[data-rank-index]');if(rank){e.preventDefault();return openRankingCharacter(Number(rank.dataset.rankIndex))}},true);
+// Open only on click, after release; consume it before rendering new controls.
+document.addEventListener('click',e=>{const aura=e.target.closest('[data-open-aura-shop]');if(aura){e.preventDefault();e.stopImmediatePropagation();return openAuraShop()}},true);document.addEventListener('pointerup',e=>{const reward=e.target.closest('[data-collection-reward]');if(reward&&!reward.disabled){e.preventDefault();return claimCollectionReward(reward.dataset.collectionReward)}const rank=e.target.closest('[data-rank-index]');if(rank){e.preventDefault();return openRankingCharacter(Number(rank.dataset.rankIndex))}},true);
 
 
 /* FINAL CORE REPAIR: summon/enhance/transcend without cloud-blocking or stacked modal patches */
