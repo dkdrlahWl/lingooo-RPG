@@ -1,0 +1,84 @@
+name: Validate stable shop hitboxes
+on:
+  push:
+    branches: [fix/shop-touch-v3-20260910]
+    paths: [.github/workflows/shop-touch-v3.yml]
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply exact locally tested patch and validate JavaScript
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          from html.parser import HTMLParser
+          import hashlib,subprocess,tempfile
+          def blob(data):
+              return hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest()
+          path=Path('index.html')
+          original=path.read_bytes()
+          assert blob(original)=='ffd307400845fa2367754c6d2f6bf949aac67632', 'Source changed; refusing to overwrite'
+          text=original.decode('utf-8')
+          changes=[
+              ('<meta name="ringu-build" content="2026-06-14-v23-remove-cloud-overwrite-restore-buttons">',
+               '<meta name="ringu-build" content="2026-09-10-shop-touch-v3">'),
+              ('/* RINGU SHOP INPUT V2: one click opens the shop; actions need a new gesture. */',
+               '/* RINGU SHOP INPUT V3: stable hitboxes; one action per fresh gesture. */'),
+              ('shopInputPointer={button,epoch:shopInputEpoch,id:pointerId(event),x:event.clientX,y:event.clientY,released:false,cancelled:false};',
+               '''// Capture bounds before the pressed visual state; never test an animated box.
+              const rect=button.getBoundingClientRect();
+              shopInputPointer={button,epoch:shopInputEpoch,id:pointerId(event),pointerType:event.pointerType||'mouse',rect:{left:rect.left,top:rect.top,right:rect.right,bottom:rect.bottom},x:event.clientX,y:event.clientY,released:false,cancelled:false};'''),
+              ('if(Math.hypot(event.clientX-input.x,event.clientY-input.y)>12)input.cancelled=true;',
+               "if(Math.hypot(event.clientX-input.x,event.clientY-input.y)>(input.pointerType==='touch'?20:12))input.cancelled=true;"),
+              ('''const rect=input.button.getBoundingClientRect();
+              input.cancelled=input.cancelled||buttonAt(event.target)!==input.button||event.clientX<rect.left||event.clientX>rect.right||event.clientY<rect.top||event.clientY>rect.bottom;''',
+               '''const rect=input.rect,slop=input.pointerType==='touch'?6:0;
+              input.cancelled=input.cancelled||!input.button.isConnected||buttonAt(event.target)!==input.button||event.clientX<rect.left-slop||event.clientX>rect.right+slop||event.clientY<rect.top-slop||event.clientY>rect.bottom+slop;'''),
+              ('const pointer=input&&input.button===button&&input.epoch===shopInputEpoch&&input.released&&!input.cancelled&&performance.now()-input.releasedAt<1000&&(!event.pointerType||event.pointerId===input.id);',
+               '''// The down/up pair already matched its pointer ID. Legacy click events can
+              // omit or normalize that ID; consume the same-button gesture only once.
+              const pointer=input&&input.button===button&&input.epoch===shopInputEpoch&&input.released&&!input.cancelled&&performance.now()-input.releasedAt<1000;'''),
+              ('/* END RINGU SHOP INPUT V2 */','/* END RINGU SHOP INPUT V3 */'),
+              ('/* V24: 상점/소모품/오라 버튼 터치 피드백 강화 */',
+               '''/* V24: 상점/소모품/오라 버튼 터치 피드백 강화 */
+          /* SHOP TOUCH V3: keep native hit targets stationary, including confirmation.
+             Retain brightness/shadow feedback without moving or scaling a pressed button. */
+          #auraShopModal button,#shopPurchaseConfirmDialog button{transform:none!important}''')
+          ]
+          for before,after in changes:
+              assert text.count(before)==1, 'Patch anchor missing or ambiguous'
+              text=text.replace(before,after,1)
+          result=text.encode('utf-8')
+          assert blob(result)=='474930d43808c6065a87832c8cfcc7fa6f0a3c3e', 'Output differs from browser-tested source'
+          assert '__shopTest' not in text
+          class Scripts(HTMLParser):
+              def __init__(self):
+                  super().__init__();self.active=False;self.parts=[];self.scripts=[]
+              def handle_starttag(self,tag,attrs):
+                  if tag=='script':
+                      attrs=dict(attrs)
+                      self.active=not attrs.get('src') and attrs.get('type','').lower() in ('','text/javascript','application/javascript','module')
+                      self.parts=[]
+              def handle_data(self,data):
+                  if self.active:self.parts.append(data)
+              def handle_endtag(self,tag):
+                  if tag=='script' and self.active:
+                      self.scripts.append(''.join(self.parts));self.active=False
+          parser=Scripts();parser.feed(text)
+          assert len(parser.scripts)==22
+          with tempfile.TemporaryDirectory() as tmp:
+              for i,code in enumerate(parser.scripts):
+                  js=Path(tmp)/f'script-{i}.js';js.write_text(code,encoding='utf-8')
+                  subprocess.run(['node','--check',str(js)],check=True)
+          path.write_bytes(result)
+          print('PASS: exact locally tested HTML and 22 executable scripts; output',blob(result))
+          PY
+      - name: Commit validated HTML on isolated fix branch
+        run: |
+          git add -- index.html
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'fix: keep shop touch targets stable while preserving fresh-gesture guard'
+          git push origin HEAD:refs/heads/fix/shop-touch-v3-20260910
