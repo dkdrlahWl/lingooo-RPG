@@ -1,0 +1,205 @@
+--- a/index.html
++++ b/index.html
+@@ -556,2 +556,35 @@
+ </style>
++<style id="ringuShopPurchaseConfirmStyleV1">
++/* RINGU SHOP PURCHASE CONFIRM V1 */
++#shopPurchaseConfirmDialog{width:min(420px,calc(100vw - 28px));max-height:calc(100dvh - 36px);margin:auto;padding:22px;border:1px solid #43516e;border-radius:20px;background:linear-gradient(145deg,#1a2334,#111724);color:#eef3ff;box-shadow:0 24px 90px #000b;overflow-y:auto;overscroll-behavior:contain;font-family:inherit;}
++#shopPurchaseConfirmDialog::backdrop{background:#050811c9;backdrop-filter:blur(5px)}
++#shopPurchaseConfirmDialog *{box-sizing:border-box}
++#shopPurchaseConfirmDialog .shop-confirm-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px}
++#shopPurchaseConfirmDialog h3{margin:0;font-size:19px;font-weight:900}
++#shopPurchaseCloseButton{display:grid;place-items:center;width:34px;height:34px;flex:none;padding:0;background:#273247;border-radius:10px;color:#bbc9df;font-size:23px}
++#shopPurchaseConfirmDialog .shop-confirm-product{display:flex;align-items:center;gap:14px;padding:16px 14px;border:1px solid #34415b;border-radius:14px;background:#0c1220}
++#shopPurchaseConfirmDialog .shop-confirm-icon{--shop-icon-color:#ffd35a;display:grid;place-items:center;width:50px;height:50px;flex:0 0 50px;color:var(--shop-icon-color);font-size:35px;line-height:1;border-radius:50%;filter:drop-shadow(0 0 9px color-mix(in srgb,var(--shop-icon-color) 45%,transparent))}
++#shopPurchaseConfirmDialog .shop-confirm-icon.is-aura{border:4px solid var(--shop-icon-color);box-shadow:inset 0 0 10px color-mix(in srgb,var(--shop-icon-color) 45%,transparent),0 0 13px color-mix(in srgb,var(--shop-icon-color) 35%,transparent)}
++#shopPurchaseConfirmDialog .shop-confirm-icon.is-rainbow{border-color:#b87bff;background:conic-gradient(#ff4f64,#ffd35a,#50e39a,#4e9cff,#bd65ff,#ff4f64);mask:radial-gradient(transparent 52%,#000 55%)}
++#shopPurchaseName{display:block;font-size:16px;font-weight:850;overflow-wrap:anywhere}
++#shopPurchaseDescription{margin:5px 0 0;color:#a8b7d0;font-size:12px;line-height:1.6}
++#shopPurchaseConfirmDialog .shop-confirm-summary{margin:20px 0 0;display:grid;gap:12px;font-size:13px}
++#shopPurchaseConfirmDialog .shop-confirm-row{display:flex;justify-content:space-between;gap:14px;align-items:center}
++#shopPurchaseConfirmDialog .shop-confirm-row[hidden]{display:none}
++#shopPurchaseConfirmDialog dt{color:#a8b7d0}
++#shopPurchaseConfirmDialog dd{margin:0;text-align:right;font-weight:800;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
++#shopPurchaseConfirmDialog .shop-confirm-total{border-top:1px solid #34415b;margin-top:1px;padding-top:14px}
++#shopPurchasePrice{color:#ffd35a}
++#shopPurchaseAfter{color:#88d4ff}
++#shopPurchaseAfter.is-short{color:#ff9d9d}
++#shopPurchasePrompt{margin:22px 0 0;text-align:center;color:#d8e2f5;font-size:13px;line-height:1.6}
++#shopPurchaseMessage{min-height:20px;margin:7px 0 14px;text-align:center;color:#ffbd8b;font-size:12px;line-height:1.6;overflow-wrap:anywhere}
++#shopPurchaseConfirmDialog .shop-confirm-actions{display:grid;grid-template-columns:1fr 1.3fr;gap:10px}
++#shopPurchaseConfirmDialog .shop-confirm-actions button{min-height:46px;padding:12px 8px;border-radius:12px;border:1px solid #3a4864;font-family:inherit;font-weight:850;font-size:14px;touch-action:manipulation}
++#shopPurchaseCancelButton{background:#263146;color:#dce6f9}
++#shopPurchaseConfirmButton{background:linear-gradient(135deg,#ffd866,#efb848);border-color:#f6ce64!important;color:#201b0e}
++#shopPurchaseConfirmDialog button:disabled{opacity:.4;cursor:not-allowed}
++#shopPurchaseConfirmDialog button:focus-visible{outline:3px solid #99caff;outline-offset:3px}
++@media(max-width:360px){#shopPurchaseConfirmDialog{padding:17px}#shopPurchaseConfirmDialog .shop-confirm-product{padding:13px 10px}#shopPurchaseName{font-size:15px}}
++</style>
+ </head>
+@@ -587,2 +620,15 @@
+ <div class="modal-bg" id="auraShopModal"><div class="modal aura-shop-modal"><h3>상점</h3><div class="shop-tabs"><button id="shopAuraTab" onclick="switchShop('aura')">오라</button><button id="shopItemTab" onclick="switchShop('item')">소모품</button></div><div class="aura-shop-grid shop-grid" id="auraShopGrid"></div><div class="modal-actions" style="grid-template-columns:1fr"><button class="primary" onclick="closeAuraShop()">닫기</button></div></div></div>
++<dialog id="shopPurchaseConfirmDialog" aria-labelledby="shopPurchaseTitle" aria-describedby="shopPurchasePrompt" aria-modal="true" aria-busy="false">
++  <div class="shop-confirm-header"><h3 id="shopPurchaseTitle">구매 확인</h3><button type="button" id="shopPurchaseCloseButton" aria-label="구매 취소하고 닫기">×</button></div>
++  <div class="shop-confirm-product"><span class="shop-confirm-icon" id="shopPurchaseIcon" aria-hidden="true"></span><div><strong id="shopPurchaseName"></strong><p id="shopPurchaseDescription"></p></div></div>
++  <dl class="shop-confirm-summary">
++    <div class="shop-confirm-row" id="shopPurchaseQuantityRow" hidden><dt>구매 수량</dt><dd id="shopPurchaseQuantity"></dd></div>
++    <div class="shop-confirm-row"><dt>구매 가격</dt><dd id="shopPurchasePrice"></dd></div>
++    <div class="shop-confirm-row"><dt>현재 보유</dt><dd id="shopPurchaseBalance"></dd></div>
++    <div class="shop-confirm-row shop-confirm-total"><dt>구매 후 잔액</dt><dd id="shopPurchaseAfter"></dd></div>
++  </dl>
++  <p id="shopPurchasePrompt">해당 상품을 구매하시겠습니까?</p>
++  <p id="shopPurchaseMessage" role="status" aria-live="polite"></p>
++  <div class="shop-confirm-actions"><button type="button" id="shopPurchaseCancelButton">취소</button><button type="button" id="shopPurchaseConfirmButton" disabled>구매 확인</button></div>
++</dialog>
+ <div class="modal-bg" id="itemInventoryModal"><div class="modal"><h3>가방</h3><p>오라와 소모품을 확인하고 사용할 수 있습니다.</p><div class="item-inventory-grid" id="itemInventoryGrid"></div><div class="modal-actions" style="grid-template-columns:1fr"><button class="primary" onclick="closeItemInventory()">닫기</button></div></div></div>
+@@ -853,8 +899,147 @@
+ function openAuraShop(){const modal=$('auraShopModal');if(!modal)return toast('상점을 불러오지 못했습니다.');modal.classList.add('show');renderAuraShop()}
+-function closeAuraShop(){$('auraShopModal').classList.remove('show')}
++function closeAuraShop(){cancelShopPurchase();$('auraShopModal').classList.remove('show')}
+ function switchShop(category){shopCategory=category==='item'?'item':'aura';renderAuraShop()}
+-function buyAura(index){index=Number(index);normalizeCharacter();if(!auraShopItems[index])return toast('오라 정보를 찾지 못했습니다.');if(state.ownedAuras.includes(index)){renderAuraShop();return toast('이미 보유한 오라입니다.')}const price=auraPrice(index);if(state.essence<price)return toast('정수가 부족합니다. 필요 정수 '+fmt(price)+'개');state.essence-=price;state.ownedAuras.push(index);normalizeCharacter();renderTop();renderEquipment();renderPlayerStats();renderItemInventory();renderAuraShop();queueSave();toast(auraShopItems[index][0]+'이 아이템 인벤토리에 들어왔습니다.')}
++/* RINGU SHOP PURCHASE CONFIRM V1 — shared confirmation for the existing shop. */
++let shopPurchasePending=null,shopPurchaseBusy=false,shopPurchaseRefreshTimer=null,shopPurchaseReturnFocus=null;
++function getShopPurchaseProduct(selection){
++  if(!selection)return null;
++  if(selection.kind==='aura'){
++    const i=Number(selection.id),item=auraShopItems[i];
++    if(!Number.isInteger(i)||i<0||!item)return null;
++    return {name:item[0],price:auraPrice(i),owned:state.ownedAuras.includes(i),description:auraEffectText(i),icon:'aura',color:item[1],rainbow:auraClass(i)==='rainbow'};
++  }
++  if(selection.kind==='consumable'&&['stone','protect'].includes(selection.id)){
++    const protect=selection.id==='protect';
++    return {name:protect?'하락방지권':'초월석',price:protect?10:25,owned:false,description:protect?'강화 실패 시 강화 수치 하락 방지':'장비 초월 재료',icon:protect?'◇':'◆',color:protect?'#ffd35a':'#7defff',quantity:1};
++  }
++  return null;
++}
++function finishShopPurchaseDialog(){
++  const dialog=$('shopPurchaseConfirmDialog');
++  clearInterval(shopPurchaseRefreshTimer);shopPurchaseRefreshTimer=null;
++  shopPurchasePending=null;shopPurchaseBusy=false;
++  if(dialog&&dialog.open)dialog.close();
++  if(shopPurchaseReturnFocus&&shopPurchaseReturnFocus.isConnected){
++    try{shopPurchaseReturnFocus.focus({preventScroll:true})}catch(_){shopPurchaseReturnFocus.focus()}
++  }
++  shopPurchaseReturnFocus=null;
++}
++function cancelShopPurchase(){if(!shopPurchaseBusy)finishShopPurchaseDialog()}
++function refreshShopPurchaseDialog(){
++  const pending=shopPurchasePending,dialog=$('shopPurchaseConfirmDialog');
++  if(!pending||!dialog||!dialog.open)return;
++  const product=getShopPurchaseProduct(pending.selection),balance=Number(state.essence);
++  const changedAccount=pending.playerUid!==state.playerUid;
++  const valid=!!product&&Number.isSafeInteger(product.price)&&product.price>=0&&Number.isFinite(balance)&&balance>=0;
++  const notReady=performance.now()<pending.readyAt;
++  const unavailable=changedAccount||!valid||product.owned;
++  const insufficient=valid&&balance<pending.price;
++  $('shopPurchaseBalance').textContent=Number.isFinite(balance)?'정수 '+fmt(balance)+'개':'확인 불가';
++  $('shopPurchaseAfter').textContent=Number.isFinite(balance)&&balance>=pending.price?'정수 '+fmt(balance-pending.price)+'개':'정수 부족';
++  $('shopPurchaseAfter').classList.toggle('is-short',insufficient);
++  let message=pending.notice||'';
++  if(changedAccount)message='계정 정보가 변경되었습니다. 취소 후 상점을 다시 열어주세요.';
++  else if(!valid)message='상품 또는 재화 정보를 확인할 수 없습니다.';
++  else if(product.owned)message='이미 보유한 상품입니다.';
++  else if(insufficient)message='정수가 '+fmt(pending.price-balance)+'개 부족합니다.';
++  $('shopPurchaseMessage').textContent=message;
++  const confirm=$('shopPurchaseConfirmButton');
++  confirm.disabled=shopPurchaseBusy||unavailable||insufficient||notReady;
++  confirm.textContent=shopPurchaseBusy?'구매 중…':'구매 확인';
++  $('shopPurchaseCancelButton').disabled=shopPurchaseBusy;
++  $('shopPurchaseCloseButton').disabled=shopPurchaseBusy;
++  dialog.setAttribute('aria-busy',String(shopPurchaseBusy));
++}
++function setShopPurchaseQuote(product){
++  const pending=shopPurchasePending;if(!pending)return;
++  pending.price=product.price;
++  $('shopPurchaseName').textContent=product.name;
++  $('shopPurchaseDescription').textContent=product.description;
++  $('shopPurchasePrice').textContent='정수 '+fmt(product.price)+'개';
++  const quantity=$('shopPurchaseQuantityRow');
++  quantity.hidden=!product.quantity;
++  $('shopPurchaseQuantity').textContent=product.quantity?fmt(product.quantity)+'개':'';
++  const icon=$('shopPurchaseIcon');
++  icon.className='shop-confirm-icon'+(product.icon==='aura'?' is-aura':'')+(product.rainbow?' is-rainbow':'');
++  icon.style.setProperty('--shop-icon-color',product.color);
++  icon.textContent=product.icon==='aura'?'':product.icon;
++}
++function requestShopPurchase(selection){
++  if(shopPurchasePending||shopPurchaseBusy)return;
++  normalizeCharacter();
++  const product=getShopPurchaseProduct(selection);
++  if(!product)return toast('상품 정보를 찾지 못했습니다.');
++  if(product.owned){renderAuraShop();return toast('이미 보유한 상품입니다.')}
++  const dialog=$('shopPurchaseConfirmDialog');
++  if(!dialog||typeof dialog.showModal!=='function')return toast('구매 확인창을 지원하는 최신 브라우저에서 다시 시도해주세요.');
++  if(!Number.isSafeInteger(product.price)||product.price<0)return toast('상품 가격을 확인할 수 없습니다.');
++  shopPurchaseReturnFocus=document.activeElement;
++  shopPurchasePending={selection:{kind:selection.kind,id:selection.id},playerUid:state.playerUid,price:product.price,readyAt:performance.now()+450,notice:''};
++  setShopPurchaseQuote(product);
++  try{dialog.showModal()}catch(error){finishShopPurchaseDialog();console.error('상점 확인창 열기 실패',error);return toast('구매 확인창을 열지 못했습니다.')}
++  refreshShopPurchaseDialog();
++  // Cancel receives initial focus: the key/click that opened the shop must not pay.
++  $('shopPurchaseCancelButton').focus({preventScroll:true});
++  shopPurchaseRefreshTimer=setInterval(refreshShopPurchaseDialog,150);
++}
++function confirmShopPurchase(){
++  const pending=shopPurchasePending;
++  if(!pending||shopPurchaseBusy||performance.now()<pending.readyAt)return;
++  const product=getShopPurchaseProduct(pending.selection),balance=Number(state.essence);
++  if(pending.playerUid!==state.playerUid||!product||product.owned||!Number.isSafeInteger(product.price)||product.price<0||!Number.isFinite(balance)||balance<0){refreshShopPurchaseDialog();return}
++  // Never silently charge a price different from the quote the player saw.
++  if(product.price!==pending.price){
++    pending.notice='가격이 변경되었습니다. 변경된 가격을 확인한 후 다시 구매 확인을 눌러주세요.';
++    pending.readyAt=performance.now()+450;
++    setShopPurchaseQuote(product);refreshShopPurchaseDialog();return;
++  }
++  if(balance<product.price){refreshShopPurchaseDialog();return}
++  shopPurchaseBusy=true;refreshShopPurchaseDialog();
++  const before={essence:state.essence,ownedAuras:state.ownedAuras.slice(),transcendStone:state.transcendStone,downgradeProtect:state.downgradeProtect,lastSeen:state.lastSeen,savedAt:state.savedAt};
++  try{
++    // The original game has client-side purchases and whole-state cloud sync.
++    // Persist the debit and reward in the SAME local save, before success UI.
++    state.essence=balance-product.price;
++    if(pending.selection.kind==='aura')state.ownedAuras.push(Number(pending.selection.id));
++    else if(pending.selection.id==='protect')state.downgradeProtect=(Number(state.downgradeProtect)||0)+1;
++    else state.transcendStone=(Number(state.transcendStone)||0)+1;
++    save(false);
++    clearTimeout(saveTimer);
++  }catch(error){
++    Object.assign(state,before);
++    shopPurchaseBusy=false;
++    pending.notice='저장하지 못해 구매를 취소했습니다. 저장 공간 또는 브라우저 설정을 확인해주세요.';
++    refreshShopPurchaseDialog();console.error('상점 구매 저장 실패',error);return;
++  }
++  // No new payment/network request is made here. Keep the game's existing sync.
++  cloudDirty=true;cloudRevision++;
++  try{scheduleCloudSave()}catch(error){console.warn('상점 구매는 기기에 저장되었습니다. 기존 클라우드 동기화 재시도 필요:',error)}
++  finishShopPurchaseDialog();
++  // Rendering errors must not be mistaken for a failed transaction and retried.
++  [renderTop,renderEquipment,renderPlayerStats,renderItemInventory,renderAuraShop].forEach(render=>{try{render()}catch(error){console.error('상점 구매 후 화면 갱신 실패',error)}});
++  toast('구매가 완료되었습니다. '+product.name+(product.quantity?' '+product.quantity+'개':'')+'가 아이템 인벤토리에 들어왔습니다.');
++}
++function buyAura(index){requestShopPurchase({kind:'aura',id:Number(index)})}
++function buyConsumable(type){requestShopPurchase({kind:'consumable',id:type})}
++(function bindShopPurchaseConfirmation(){
++  const dialog=$('shopPurchaseConfirmDialog');
++  if(!dialog)return;
++  $('shopPurchaseConfirmButton').addEventListener('click',confirmShopPurchase);
++  $('shopPurchaseCancelButton').addEventListener('click',cancelShopPurchase);
++  $('shopPurchaseCloseButton').addEventListener('click',cancelShopPurchase);
++  dialog.addEventListener('cancel',event=>{event.preventDefault();cancelShopPurchase()});
++  dialog.addEventListener('close',()=>{if(!dialog.open&&shopPurchasePending)finishShopPurchaseDialog()});
++  // Native modal dialogs make the background inert. Suppress document-level
++  // game shortcuts as well, without stopping the buttons' click handlers.
++  ['keydown','keyup'].forEach(type=>window.addEventListener(type,event=>{
++    if(!dialog.open)return;
++    if(type==='keydown'&&event.key==='Escape'){event.preventDefault();cancelShopPurchase()}
++    else if(event.repeat&&(event.key==='Enter'||event.key===' '))event.preventDefault();
++    event.stopImmediatePropagation();
++  },true));
++})();
++/* END RINGU SHOP PURCHASE CONFIRM V1 */
+ function equipAura(index){index=Number(index);normalizeCharacter();if(!state.ownedAuras.includes(index))return toast('보유하지 않은 오라입니다.');state.equippedAura=index;renderEquipment();renderPlayerStats();renderItemInventory();renderAuraShop();queueSave();toast(auraShopItems[index][0]+' 장착 완료')}
+ function unequipAura(){if(state.equippedAura<0)return;state.equippedAura=-1;renderEquipment();renderPlayerStats();renderItemInventory();renderAuraShop();queueSave();toast('오라 장착을 해제했습니다.')}
+-function buyConsumable(type){type=type==='protect'?'protect':'stone';const price=type==='protect'?10:25;if(state.essence<price)return toast('정수가 부족합니다. 필요 정수 '+fmt(price)+'개');state.essence-=price;if(type==='protect')state.downgradeProtect=(Number(state.downgradeProtect)||0)+1;else state.transcendStone=(Number(state.transcendStone)||0)+1;renderTop();renderItemInventory();renderAuraShop();queueSave();toast((type==='protect'?'하락방지권':'초월석')+' 1개가 아이템 인벤토리에 들어왔습니다.')}
++
+ function renderAuraShop(){normalizeCharacter();$('shopAuraTab').classList.toggle('on',shopCategory==='aura');$('shopItemTab').classList.toggle('on',shopCategory==='item');if(shopCategory==='aura')$('auraShopGrid').innerHTML=auraShopItems.map(([name,color],i)=>{const owned=state.ownedAuras.includes(i),equipped=state.equippedAura===i,price=auraPrice(i),cls=auraClass(i);return '<div class="aura-card '+(owned?'equipped ':'')+cls+'" data-aura-index="'+i+'" style="--aura-color:'+color+'"><span class="aura-sample"></span><span><strong>'+name+'</strong><small>원형 회전 오라 · '+auraEffectText(i)+' · '+(equipped?'장착 중':owned?'보유 중':'가격 정수 '+fmt(price)+'개')+'</small></span><button class="'+(owned?'equip':'buy')+'" '+(equipped?'disabled':'onclick="'+(owned?'equipAura('+i+')':'buyAura('+i+')')+'"')+'>'+(equipped?'장착중':owned?'장착':'정수 '+fmt(price)+'개')+'</button></div>'}).join('');else $('auraShopGrid').innerHTML='<div class="shop-card" data-consumable="stone"><span class="utility-icon" style="--ic:#7defff">◆</span><span><strong>초월석</strong><small>장비 초월 재료 · 현재 '+fmt(state.transcendStone)+'개</small></span><button onclick="buyConsumable(\'stone\')">정수 25개</button></div><div class="shop-card" data-consumable="protect"><span class="utility-icon" style="--ic:#ffd35a">◇</span><span><strong>하락방지권</strong><small>강화 실패 시 강화 수치 하락 방지 · 현재 '+fmt(state.downgradeProtect)+'장</small></span><button onclick="buyConsumable(\'protect\')">정수 10개</button></div>'}
